@@ -19,6 +19,8 @@ export class FktpService {
     // Menambahkan tipe return yang jelas
     const endpointConfig = enpoints.find((e) => e.name === name);
 
+    console.log("endpointConfig : ", endpointConfig);
+
     if (!endpointConfig) {
       throw new Error(`Endpoint ${name} tidak ditemukan`);
     }
@@ -31,7 +33,9 @@ export class FktpService {
     // Melakukan request sesuai dengan method yang ditentukan di statusConfig
     switch (endpointConfig.method as string) {
       case "GET":
-        return await this.client.get(endpoint);
+        const res = await this.client.get(endpoint);
+        console.log("seemi raw : ", res);
+        return res;
       case "POST":
         return await this.client.post(endpoint, params);
       case "PUT":

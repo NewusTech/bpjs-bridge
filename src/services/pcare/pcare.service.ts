@@ -18,6 +18,8 @@ export class PcareService extends FktpService {
       start,
       limit,
     });
+
+    console.log(response.data);
     return response.data.response;
   }
 
