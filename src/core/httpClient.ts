@@ -2,6 +2,7 @@
 import axios from "axios";
 import { generateHeader } from "./security";
 import { configType } from "./configHelper";
+import { decryptBpjsResponse } from "./decrypt";
 
 export const createBpjsClient = (config: configType) => {
   const client = axios.create({
@@ -23,10 +24,20 @@ export const createBpjsClient = (config: configType) => {
   });
 
   client.interceptors.response.use(
-    (res) => res.data,
+    ({ data, ...rest }) => {
+      const { response: encryptedData } = data;
+      return typeof encryptedData === "string"
+        ? decryptBpjsResponse(
+            encryptedData,
+            config.consId,
+            config.secretKey,
+            rest.headers["X-timestamp"] as string
+          )
+        : JSON.parse(JSON.stringify({})); // Return empty object if response is not a string
+    },
     (err) => {
       const message = err.response?.data?.metaData?.message || err.message;
-      throw new Error(message);
+      return err.response || { data: { metaData: { code: 500, message } } };
     }
   );
 

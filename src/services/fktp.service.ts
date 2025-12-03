@@ -28,7 +28,6 @@ export class FktpService {
     Object.keys(params).forEach((key) => {
       endpoint = endpoint.replace(`{${key}}`, params[key]);
     });
-
     // Melakukan request sesuai dengan method yang ditentukan di statusConfig
     switch (endpointConfig.method as string) {
       case "GET":
