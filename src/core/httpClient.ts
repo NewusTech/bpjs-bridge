@@ -43,22 +43,14 @@ export const createBpjsClient = (config: configType) => {
       }
 
       // Return an AxiosResponse with empty object if response is not a string
-      return { ...res, data: {} };
+      return { ...res, data: res.data ?? "No Content" };
     },
     (err) => {
       console.error(err);
-      const message = err.response?.data?.metaData?.message || err.message;
-
-      // // If axios already provided a response, reject with it to preserve details
-      // if (err.response) {
-      //   return Promise.reject(err.response);
-      // }
-
-      // Otherwise construct a minimal AxiosResponse-like fallback and reject
       const fallback: AxiosResponse = {
-        data: { metaData: { code: 500, message } },
-        status: 500,
-        statusText: "Internal Server Error",
+        data: err.response?.data?.metaData?.message ?? "Unkown Error",
+        status: err.status || 500,
+        statusText: err.message || "Internal Server Error",
         headers: {},
         config: err.config || {},
       };

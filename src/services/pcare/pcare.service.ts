@@ -12,7 +12,7 @@ export class PcareService extends FktpService {
     kodediag: string,
     start: number,
     limit: number
-  ): Promise<any> {
+  ): Promise<DataPaginate<Diagnose>> {
     const response = await this.callEndpoint<DataPaginate<Diagnose>>(
       "diagnosa",
       {

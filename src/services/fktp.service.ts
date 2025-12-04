@@ -17,7 +17,7 @@ export class FktpService {
   async callEndpoint<T>(
     name: EndpointName,
     params: Record<string, any> = {}
-  ): Promise<AxiosResponse<BPJSResponse<T>>> {
+  ): Promise<AxiosResponse<T>> {
     // Menambahkan tipe return yang jelas
     const endpointConfig = enpoints.find((e) => e.name === name);
 
@@ -34,7 +34,6 @@ export class FktpService {
     // Melakukan request sesuai dengan method yang ditentukan di statusConfig
     switch (endpointConfig.method as string) {
       case "GET":
-        // const res = await this.client.get(endpoint);
         const res = await this.client({
           url: endpoint,
           method: "GET",
