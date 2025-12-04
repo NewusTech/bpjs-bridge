@@ -2,6 +2,7 @@ import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { configType } from "./configHelper";
 import { generateHeader } from "./security";
 import { decryptBpjsResponse } from "./decrypt";
+import { BrigeError } from "../types/globalModle";
 
 export const createBpjsClient = (config: configType) => {
   const client = axios.create({
@@ -18,7 +19,6 @@ export const createBpjsClient = (config: configType) => {
     req.headers["X-Authorization"] = headers["X-Authorization"];
     req.headers.user_key = headers["userKey"];
     req.headers.Accept = headers["Accept"];
-    req.headers.Accept = "application/json";
     req.headers["User-Agent"] = "BPJS-Bridge-Client/1.0";
     req.headers["Accept-Encoding"] = "gzip, compress, deflate, br";
 
@@ -38,24 +38,32 @@ export const createBpjsClient = (config: configType) => {
           config.secretKey,
           timestamp
         );
-        // Return a full AxiosResponse with decrypted payload in data
         return { ...res, data: decrypted };
       }
-
-      // Return an AxiosResponse with empty object if response is not a string
-      return { ...res, data: res.data ?? "No Content" };
+      res.data = `[HTTP CLIENT ERROR => URL : ${res.config.baseURL}/${
+        res.config.url
+      } ] => ${res.data.metaData?.message || "unknown error"}`;
+      return res;
     },
     (err) => {
-      console.error(err);
+      console.error(
+        "[HTTP CLIENT ERROR]",
+        err.message + " || " + JSON.stringify(err.response?.data) || ""
+      );
       const fallback: AxiosResponse = {
-        data: err.response?.data?.metaData?.message ?? "Unkown Error",
+        data: `[HTTP CLIENT ERROR => URL : ${err.config.baseURL}/${
+          err.config.url
+        } ] => ${
+          err.response?.data?.metaData?.message ??
+          err.message ??
+          "unknown error"
+        }`,
         status: err.status || 500,
         statusText: err.message || "Internal Server Error",
         headers: {},
         config: err.config || {},
       };
       return fallback;
-      // return Promise.reject(fallback);
     }
   );
 

@@ -1,7 +1,6 @@
 import * as crypto from "crypto"; // Pastikan path logger sesuai dengan struktur proyek Anda
 import { decompressFromEncodedURIComponent } from "lz-string";
 
-// Mendeklarasikan tipe untuk response yang akan dikembalikan
 type DecryptedResponse = Record<string, any>;
 
 export const decryptBpjsResponse = (
@@ -25,10 +24,8 @@ export const decryptBpjsResponse = (
       .update(cons_id + secret_key + timestamp)
       .digest();
 
-    // Mengambil 16 byte pertama untuk IV
     const iv = key.subarray(0, 16);
 
-    // Dekripsi data menggunakan AES-256-CBC
     const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
     let decrypted = decipher.update(Buffer.from(encryptedData, "base64"));
 
@@ -36,13 +33,9 @@ export const decryptBpjsResponse = (
 
     const decryptedText = decrypted.toString();
 
-    // Coba dekompresi jika memungkinkan
     const decompressedText = decompressFromEncodedURIComponent(decryptedText);
-
-    // Jika dekompresi gagal, gunakan teks yang sudah didekripsi
     const finalText = decompressedText || decryptedText;
 
-    // Parsing hasil dekompresi menjadi objek JSON
     return JSON.parse(finalText);
   } catch (error: any) {
     throw new Error(`[DECRYPT ERROR] ${error.message}`);

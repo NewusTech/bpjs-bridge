@@ -15,6 +15,12 @@ declare global {
     count: number;
     list: Array<T>;
   };
+
+  type BridgeErrorType =
+    | "VALIDATION_ERROR"
+    | "NOT_FOUND_ERROR"
+    | "NO_CONTENT"
+    | "UNKNOWN_ERROR";
 }
 
 interface MetaData {

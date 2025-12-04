@@ -3,18 +3,147 @@ import { EndpointName, enpoints } from "../config/enpoints";
 import { createBpjsClient } from "../core/httpClient";
 import { configType } from "../core/configHelper";
 import { BPJSBridgeConfig } from "../config/BPJSConfig";
+import Redis from "ioredis";
 
 export class FktpService {
   private client;
-  private baseUrl: string;
+  private redisClient: Redis | null = null;
+  private defaultRedisKeyPrefix = "bpjs_bridge_fktp";
 
-  constructor(config: configType) {
+  constructor(config: configType, redisClient?: Redis, chachePrefix?: string) {
     this.client = createBpjsClient(config); // client dari axios yang sudah disiapkan
-    this.baseUrl = config.baseUrl;
+    if (redisClient) {
+      this.redisClient = redisClient;
+
+      this.redisClient.on("connect", () => {
+        console.info("[BRIDGE FKTP BPJS] => ✅ Redis connected");
+      });
+
+      this.redisClient.on("error", (err: Error) => {
+        console.error("[BRIDGE FKTP BPJS] => ❌ Redis error:", err);
+      });
+
+      if (chachePrefix) {
+        this.defaultRedisKeyPrefix =
+          this.defaultRedisKeyPrefix + "_" + chachePrefix + ":";
+      }
+    }
   }
 
-  // Fungsi dinamis untuk mengakses endpoint berdasarkan nama dan parameter
-  async callEndpoint<T>(
+  /**
+   * Menyimpan data ke Redis dengan TTL (time-to-live)
+   * @param key - Kunci data
+   * @param value - Data yang akan disimpan
+   * @param expInSecond - Waktu kadaluarsa dalam detik (default: 3600)
+   */
+  private async set<T>(
+    key: string,
+    value: T,
+    expInSecond: number = 3600
+  ): Promise<void> {
+    if (typeof expInSecond !== "number") {
+      expInSecond = 3600;
+    }
+    try {
+      const data =
+        typeof value === "object" ? JSON.stringify(value) : String(value);
+      await this.redisClient!.set(
+        this.defaultRedisKeyPrefix + ":" + key,
+        data,
+        "EX",
+        expInSecond
+      );
+      console.info(
+        `🔵 Redis SET: ${
+          this.defaultRedisKeyPrefix + key
+        } (TTL: ${expInSecond}s)`
+      );
+    } catch (error) {
+      console.error("❌ Redis set error:", error);
+    }
+  }
+
+  /**
+   * Mengambil data dari Redis
+   * @param key - Kunci data
+   * @returns Data dari Redis atau null jika tidak ditemukan
+   */
+  private async get(key: string): Promise<string | null> {
+    try {
+      const data = await this.redisClient!.get(
+        this.defaultRedisKeyPrefix + ":" + key
+      );
+      if (data) {
+        console.info(`🔍 Redis GET: ${this.defaultRedisKeyPrefix + key}`);
+        return data;
+      }
+      console.warn?.(
+        `⚠️ Redis GET: ${
+          this.defaultRedisKeyPrefix + key
+        } (Data tidak ditemukan)`
+      );
+      return null;
+    } catch (error) {
+      console.error("❌ Redis get error:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Menghapus data dari Redis
+   * @param key - Kunci data
+   */
+  private async del(key: string): Promise<void> {
+    try {
+      await this.redisClient!.del(this.defaultRedisKeyPrefix + ":" + key);
+      console.info(`🗑️ Redis DEL: ${this.defaultRedisKeyPrefix + key}`);
+    } catch (error) {
+      console.error("❌ Redis del error:", error);
+    }
+  }
+
+  /**
+   *
+   * @param pattern - Pola kunci untuk menghapus (misal: 'user_*' untuk menghapus semua kunci yang diawali 'user_')
+   * Menghapus beberapa kunci berdasarkan pola (pattern)
+   */
+  private async deleteKeysByPattern(pattern: string) {
+    let cursor = "0";
+    pattern = this.defaultRedisKeyPrefix + ":" + pattern;
+    do {
+      const [nextCursor, foundKeys] = await this.redisClient!.scan(
+        cursor,
+        "MATCH",
+        pattern,
+        "COUNT",
+        100
+      );
+      cursor = nextCursor;
+      if (foundKeys.length > 0) {
+        await this.redisClient!.del(...foundKeys);
+      }
+    } while (cursor !== "0");
+  }
+
+  /**
+   * Membersihkan seluruh cache Redis
+   */
+  private async flushAll(): Promise<void> {
+    try {
+      await this.redisClient!.flushall();
+      console.info("🧹 Redis cache cleared!");
+    } catch (error) {
+      console.error("❌ Redis flush error:", error);
+    }
+  }
+
+  /**
+   * Memanggil endpoint BPJS berdasarkan nama dan parameter yang diberikan
+   * @param name
+   * @param params
+   * @returns
+   */
+  protected async callEndpoint<T>(
     name: EndpointName,
     params: Record<string, any> = {}
   ): Promise<AxiosResponse<T>> {
@@ -30,6 +159,21 @@ export class FktpService {
     Object.keys(params).forEach((key) => {
       endpoint = endpoint.replace(`{${key}}`, params[key]);
     });
+    const cacheKey = `${name}:${JSON.stringify(params)}`;
+    if (this.redisClient) {
+      const cachedData = await this.get(cacheKey);
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData) as T;
+        const cachedResponse: AxiosResponse<T> = {
+          data: parsed,
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: (this.client?.defaults ?? {}) as any,
+        };
+        return cachedResponse;
+      }
+    }
 
     // Melakukan request sesuai dengan method yang ditentukan di statusConfig
     switch (endpointConfig.method as string) {
@@ -38,6 +182,10 @@ export class FktpService {
           url: endpoint,
           method: "GET",
         });
+
+        if (this.redisClient && typeof res.data !== "string") {
+          await this.set(cacheKey, res.data);
+        }
         return res;
       case "POST":
         return await this.client.post(endpoint, params);
