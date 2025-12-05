@@ -1,5 +1,5 @@
 {
-  "name": "@newus/bpjs-bridge",
+  "name": "@newustechnology/bpjs-bridge",
   "version": "1.0.0",
   "description": "Bridging BPJS Kesehatan modular untuk Node.js / TypeScript",
   "main": "dist/index.js",
@@ -17,6 +17,9 @@
   "files": [
     "dist/**/*"
   ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "author": "Newus Teknologi",
   "license": "MIT",
   "scripts": {

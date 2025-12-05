@@ -1,4 +1,4 @@
-# @newus/bpjs-bridging
+# @newustechnology/bpjs-bridging
 
 Library resmi untuk bridging BPJS Kesehatan (PCare, VClaim, Antrean, iCare, Rekam Medis)
 yang sudah modular, type-safe, dan mudah diintegrasikan.
@@ -6,13 +6,13 @@ yang sudah modular, type-safe, dan mudah diintegrasikan.
 ## Installation
 
 ```bash
-npm install @newus/bpjs-bridging
+npm install @newustechnology/bpjs-bridging
 ```
 
 ## Usage
 
 ```
-import { PcareService } from "@newus/bpjs-bridging";
+import { PcareService } from "@newustechnology/bpjs-bridging";
 
 const pcare = new PcareService({
 consId: "...",
