@@ -1,7 +1,7 @@
 import { AxiosResponse } from "axios";
 import Redis from "ioredis";
 import { EndpointName, enpoints } from "../config/enpoints";
-import { BpjsCLient, createBpjsClient } from "./httpClient";
+import { BpjsCLient, createBpjsClient } from "../core/httpClient";
 import {
   BpjsCacheError,
   BpjsEndpointNotFoundError,
@@ -215,6 +215,7 @@ export class FktpService {
           throw new BpjsEndpointNotFoundError(name);
       }
     } catch (error) {
+      // console.log("Error in callEndpoint:", error);
       throw BpjsErrorFactory.fromAxios(error);
     }
   }

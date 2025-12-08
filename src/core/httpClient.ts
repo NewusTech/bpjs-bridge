@@ -1,16 +1,8 @@
-import axios, { AxiosResponse } from "axios";
-import { configType } from "../core/configHelper";
-import { decryptBpjsResponse } from "../core/decrypt";
-import { generateHeader } from "../core/security";
-import {
-  BpjsAuthError,
-  BpjsDecryptionError,
-  BpjsError,
-  BpjsInterceptorError,
-  BpjsNetworkError,
-  BpjsRateLimitError,
-  BpjsResponseError,
-} from "../types/globalErroModule";
+import axios, { AxiosError, AxiosResponse } from "axios";
+import { configType } from "./configHelper";
+import { decryptBpjsResponse } from "./decrypt";
+import { generateHeader } from "./security";
+import { BpjsDecryptionError } from "../types/globalErroModule";
 
 export type BpjsCLient = {
   baseUrl: string;
@@ -43,23 +35,8 @@ export const createBpjsClient = (config: BpjsCLient) => {
         res.config.url
       }`;
       const { response: encryptedData } = res.data;
-
-      // Ensure encryptedData is a string before trying to decrypt
-      // if (typeof encryptedData === "string") {
-      //   const timestamp = String(headers["X-timestamp"]);
-      //   const decrypted = decryptBpjsResponse(
-      //     encryptedData,
-      //     config.consId,
-      //     config.secretKey,
-      //     timestamp
-      //   );
-      //   return { ...res, data: decrypted };
-      // }
       if (encryptedData) {
         if (typeof encryptedData !== "string") {
-          console.error(
-            `[DECRYPTION ERROR] ${url} - Invalid encrypted data type`
-          );
           throw new BpjsDecryptionError(
             `[DECRYPTION ERROR] ${url} Format encrypted data tidak valid, expected string`,
             { type: typeof encryptedData, data: encryptedData }
@@ -99,37 +76,68 @@ export const createBpjsClient = (config: BpjsCLient) => {
           );
         }
       }
-      // res.data = `[HTTP CLIENT ERROR => URL : ${res.config.baseURL}/${
-      //   res.config.url
-      // } ] => ${res.data.metaData?.message || "unknown error"}`;
-      throw new BpjsError(
-        `[HTTP CLIENT ERROR => URL : ${res.config.baseURL}/${
-          res.config.url
-        } ] => ${res.data.metaData?.message || "unknown error"}`,
-        "NO_CONTENT_ERROR",
-        204
-      );
-      // return res;
+      res.data = `[HTTP CLIENT ERROR => URL : ${res.config.baseURL}/${
+        res.config.url
+      } ] => ${"NO_CONTENT_IN_RESPONSE"}`;
+      res.status = 204;
+      res.statusText = "No Content";
+
+      const AxiosError: AxiosError = {
+        name: "BpjsResponseError",
+        code: "NO_CONTENT_IN_RESPONSE",
+        message: res.data,
+        status: res.status,
+        config: res.config,
+        isAxiosError: true,
+        response: {
+          data: res.data,
+          status: res.status,
+          statusText: res.statusText,
+          headers: res.headers,
+          config: res.config,
+        },
+        toJSON: () => ({}),
+      };
+
+      return Promise.reject(AxiosError);
     },
     (err) => {
-      console.error(
-        "[HTTP CLIENT ERROR]",
-        err.message + " || " + JSON.stringify(err.response?.data) || ""
-      );
-      const fallback: AxiosResponse = {
-        data: `[HTTP CLIENT ERROR => URL : ${err.config.baseURL}/${
-          err.config.url
-        } ] => ${
+      const url = `${err.config.method?.toUpperCase()} ${err.config.baseURL}/${
+        err.config.url
+      }`;
+      const fallBackResponse: AxiosResponse = {
+        data: {
+          message: `[HTTP CLIENT ERROR => URL : ${url} ] => ${
+            err.response?.data?.metaData?.message ??
+            err.message ??
+            "unknown error"
+          }`,
+          originalResponse: err.response?.data,
+        },
+        status: err.response?.data?.metaData?.code || err.status || 500,
+        statusText:
           err.response?.data?.metaData?.message ??
-          err.message ??
-          "unknown error"
-        }`,
-        status: err.status || 500,
-        statusText: err.message || "Internal Server Error",
+          (err.message || "Internal Server Error"),
         headers: {},
         config: err.config || {},
       };
-      return fallback;
+
+      const AxiosError: AxiosError = {
+        name: "BpjsResponseError",
+        message: fallBackResponse.data.message,
+        status: fallBackResponse.status,
+        config: fallBackResponse.config,
+        isAxiosError: true,
+        response: {
+          data: fallBackResponse.data,
+          status: fallBackResponse.status,
+          statusText: fallBackResponse.statusText,
+          headers: err.headers,
+          config: fallBackResponse.config,
+        },
+        toJSON: () => ({}),
+      };
+      return Promise.reject(AxiosError);
     }
   );
 
