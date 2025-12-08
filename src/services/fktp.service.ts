@@ -5,6 +5,7 @@ import { BpjsCLient, createBpjsClient } from "./httpClient";
 import {
   BpjsCacheError,
   BpjsEndpointNotFoundError,
+  BpjsErrorFactory,
 } from "../types/globalErroModule";
 
 export class FktpService {
@@ -191,26 +192,30 @@ export class FktpService {
       }
     }
 
-    // Melakukan request sesuai dengan method yang ditentukan di statusConfig
-    switch (endpointConfig.method as string) {
-      case "GET":
-        const res = await this.client({
-          url: endpoint,
-          method: "GET",
-        });
+    try {
+      // Melakukan request sesuai dengan method yang ditentukan di statusConfig
+      switch (endpointConfig.method as string) {
+        case "GET":
+          const res = await this.client({
+            url: endpoint,
+            method: "GET",
+          });
 
-        if (this.redisClient && typeof res.data !== "string") {
-          await this.set(cacheKey, res.data);
-        }
-        return res;
-      case "POST":
-        return await this.client.post(endpoint, body);
-      case "PUT":
-        return await this.client.put(endpoint, body);
-      case "DELETE":
-        return await this.client.delete(endpoint, body);
-      default:
-        throw new Error(`Method ${endpointConfig.method} tidak didukung`);
+          if (this.redisClient && typeof res.data !== "string") {
+            await this.set(cacheKey, res.data);
+          }
+          return res;
+        case "POST":
+          return await this.client.post(endpoint, body);
+        case "PUT":
+          return await this.client.put(endpoint, body);
+        case "DELETE":
+          return await this.client.delete(endpoint, body);
+        default:
+          throw new BpjsEndpointNotFoundError(name);
+      }
+    } catch (error) {
+      throw BpjsErrorFactory.fromAxios(error);
     }
   }
 }

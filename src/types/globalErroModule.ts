@@ -166,85 +166,98 @@ export function parseInterceptorError(data: string): {
   };
 }
 
-/**
- * Transform Axios error atau interceptor error menjadi BpjsError
- */
-export function handleAxiosError(error: any): BpjsError {
-  // Handle error yang sudah diproses oleh interceptor
-  if (error.response?.data && isInterceptorErrorResponse(error.response.data)) {
-    const { url, message } = parseInterceptorError(error.response.data);
-    return new BpjsInterceptorError(
-      message,
-      error.response.status || 500,
-      url,
-      {
-        statusText: error.response.statusText,
-        originalMessage: error.message,
-      }
-    );
-  }
-
-  // Handle timeout
-  if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
-    return new BpjsTimeoutError("Request timeout, silakan coba lagi");
-  }
-
-  // Handle network errors
-  if (error.code === "ENOTFOUND" || error.code === "ECONNREFUSED") {
-    return new BpjsNetworkError(
-      "Tidak dapat terhubung ke server BPJS. Periksa koneksi internet Anda.",
-      error
-    );
-  }
-
-  // Handle response dengan status code
-  if (error.response) {
-    const { status, data } = error.response;
-
-    // Check for metaData in BPJS response format
-    const metadata = data?.metaData;
-    const message = metadata?.message || data?.message || "Terjadi kesalahan";
-
-    switch (status) {
-      case 401:
-      case 403:
-        return new BpjsAuthError(
-          metadata?.message || "Autentikasi gagal atau akses ditolak",
-          error.response
-        );
-      case 404:
-        return new BpjsResponseError(
-          metadata?.message || "Data tidak ditemukan",
-          metadata?.code || "NOT_FOUND",
-          404,
-          error.response
-        );
-      case 429:
-        return new BpjsRateLimitError(
-          metadata?.message || "Terlalu banyak request",
-          error.response.headers["retry-after"]
-        );
-      case 500:
-      case 502:
-      case 503:
-      case 504:
-        return new BpjsNetworkError(
-          metadata?.message || "Server BPJS bermasalah, silakan coba lagi",
-          error.response
-        );
-      default:
-        return new BpjsResponseError(
-          message,
-          metadata?.code,
-          status,
-          error.response
-        );
+export class BpjsErrorFactory {
+  /**
+   * Factory untuk mengubah Axios error menjadi error custom BPJS
+   */
+  static fromAxios(error: any): BpjsError {
+    // Interceptor Error
+    if (
+      error.response?.data &&
+      isInterceptorErrorResponse(error.response.data)
+    ) {
+      const { url, message } = parseInterceptorError(error.response.data);
+      return new BpjsInterceptorError(
+        message,
+        error.response.status || 500,
+        url,
+        {
+          statusText: error.response.statusText,
+          originalMessage: error.message,
+        }
+      );
     }
-  } else if (error.request) {
-    // Request dibuat tapi tidak ada response
-    return new BpjsNetworkError("Tidak dapat terhubung ke server BPJS", error);
-  } else {
-    // Error terjadi saat setup request
+
+    // Timeout
+    if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+      return new BpjsTimeoutError("Request timeout, silakan coba lagi");
+    }
+
+    // Network
+    if (["ENOTFOUND", "ECONNREFUSED"].includes(error.code)) {
+      return new BpjsNetworkError(
+        "Tidak dapat terhubung ke server BPJS. Periksa koneksi internet Anda.",
+        error
+      );
+    }
+
+    // Response error
+    if (error.response) {
+      const { status, data } = error.response;
+
+      const metadata = data?.metaData;
+      const message = metadata?.message || data?.message || "Terjadi kesalahan";
+
+      switch (status) {
+        case 401:
+        case 403:
+          return new BpjsAuthError(
+            metadata?.message || "Autentikasi gagal atau akses ditolak",
+            error.response
+          );
+
+        case 404:
+          return new BpjsResponseError(
+            metadata?.message || "Data tidak ditemukan",
+            metadata?.code || "NOT_FOUND",
+            404,
+            error.response
+          );
+
+        case 429:
+          return new BpjsRateLimitError(
+            metadata?.message || "Terlalu banyak request",
+            error.response.headers["retry-after"]
+          );
+
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          return new BpjsNetworkError(
+            metadata?.message || "Server BPJS bermasalah, silakan coba lagi",
+            error.response
+          );
+
+        default:
+          return new BpjsResponseError(
+            message,
+            metadata?.code,
+            status,
+            error.response
+          );
+      }
+    }
+
+    // No response
+    if (error.request) {
+      return new BpjsNetworkError(
+        "Tidak dapat terhubung ke server BPJS",
+        error
+      );
+    }
+
+    // Error saat setup request
     return new BpjsError(
       error.message || "Terjadi kesalahan pada request",
       "REQUEST_ERROR",
@@ -252,78 +265,4 @@ export function handleAxiosError(error: any): BpjsError {
       error
     );
   }
-}
-
-/**
- * Safe wrapper untuk async function dengan error handling
- */
-export async function safeAsync<T>(
-  fn: () => Promise<T>,
-  errorHandler?: (error: any) => BpjsError
-): Promise<[T | null, BpjsError | null]> {
-  try {
-    const result = await fn();
-    return [result, null];
-  } catch (error) {
-    const handledError = errorHandler
-      ? errorHandler(error)
-      : error instanceof BpjsError
-      ? error
-      : handleAxiosError(error);
-
-    return [null, handledError];
-  }
-}
-
-/**
- * Retry utility untuk request yang gagal
- */
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  options: {
-    maxRetries?: number;
-    delay?: number;
-    shouldRetry?: (error: BpjsError, attempt: number) => boolean;
-    onRetry?: (error: BpjsError, attempt: number) => void;
-  } = {}
-): Promise<T> {
-  const {
-    maxRetries = 3,
-    delay = 1000,
-    shouldRetry = (error) =>
-      error instanceof BpjsNetworkError ||
-      error instanceof BpjsTimeoutError ||
-      (error.statusCode && error.statusCode >= 500),
-    onRetry,
-  } = options;
-
-  let lastError: BpjsError;
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error instanceof BpjsError ? error : handleAxiosError(error);
-
-      if (!shouldRetry(lastError, attempt) || attempt === maxRetries - 1) {
-        throw lastError;
-      }
-
-      // Call onRetry callback jika ada
-      if (onRetry) {
-        onRetry(lastError, attempt + 1);
-      }
-
-      // Exponential backoff
-      const backoffDelay = delay * Math.pow(2, attempt);
-      console.warn(
-        `[RETRY ${attempt + 1}/${maxRetries}] Retrying in ${backoffDelay}ms...`,
-        lastError.message
-      );
-
-      await new Promise((resolve) => setTimeout(resolve, backoffDelay));
-    }
-  }
-
-  throw lastError!;
 }
