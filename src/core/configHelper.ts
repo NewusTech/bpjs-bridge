@@ -7,6 +7,9 @@ export type configType = {
   mode: "dev" | "prod";
 };
 // src/core/configHelper.ts
+/**
+ * @deprecated
+ */
 export function resolveConfig(globalCfg: configType, serviceCfg: configType) {
   return {
     consId: serviceCfg?.consId ?? globalCfg?.consId,

@@ -342,13 +342,13 @@ export const BaseUrl = {
     url_pcare: "https://apijkn-dev.bpjs-kesehatan.go.id/pcare-rest-dev",
     url_icare: "https://apijkn-dev.bpjs-kesehatan.go.id/ihs_dev",
     url_vclaim: "https://apijkn-dev.bpjs-kesehatan.go.id/vclaim-rest-dev",
-    url_antrol: "https://apijkn-dev.bpjs-kesehatan.go.id/antreanfktp_dev",
+    url_antrean_fktp: "https://apijkn-dev.bpjs-kesehatan.go.id/antreanfktp_dev",
   },
   prod: {
     url_icare: "https://apijkn.bpjs-kesehatan.go.id/ihs",
     url_pcare: "https://apijkn.bpjs-kesehatan.go.id/pcare-rest",
     url_vclaim: "https://apijkn.bpjs-kesehatan.go.id/vclaim-rest",
-    url_antrol: "https://apijkn.bpjs-kesehatan.go.id/antreanfktp",
+    url_antrean_fktp: "https://apijkn.bpjs-kesehatan.go.id/antreanfktp",
   },
 };
 
