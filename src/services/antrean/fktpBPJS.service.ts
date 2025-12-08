@@ -1,6 +1,6 @@
 import Redis from "ioredis";
 import { configType } from "../../core/configHelper";
-import { FktpService } from "../fktp.service";
+
 import { BaseUrl } from "../../config/enpoints";
 import { DataArray } from "../../types/global";
 import {
@@ -10,11 +10,12 @@ import {
   AntreanFktpReferensiPoliType,
   AntreanFktpStatusPayload,
 } from "../../types/antreanFktp";
+import { BaseService } from "../base.service";
 
 /**
  * Service untuk mengakses endpoint Antrean BPJS FKTP
  */
-export class AntreanFktpService extends FktpService {
+export class AntreanFktpService extends BaseService {
   /**
    * Constructor AntreanFktpService
    * @param config konfigurasi BPJS

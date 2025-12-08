@@ -8,7 +8,7 @@ import {
   BpjsErrorFactory,
 } from "../types/globalErroModule";
 
-export class FktpService {
+export class BaseService {
   private client;
   private redisClient: Redis | null = null;
   private defaultRedisKeyPrefix = "bpjs_bridge_fktp";

@@ -3,12 +3,12 @@ import { BaseUrl } from "../../config/enpoints";
 import { configType } from "../../core/configHelper";
 import { DataObject } from "../../types/global";
 import { IcareFkrtlPayload, IcareFktpPayload } from "../../types/icare";
-import { FktpService } from "../fktp.service";
+import { BaseService } from "../base.service";
 
 /**
  * Service untuk mengakses endpoint API Data Riwayat Pelayanan iCare
  */
-export class IcareService extends FktpService {
+export class IcareService extends BaseService {
   /**
    * Constructor AntreanFktpService
    * @param config konfigurasi BPJS

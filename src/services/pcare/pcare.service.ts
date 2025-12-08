@@ -2,27 +2,27 @@
 import Redis from "ioredis";
 import { BaseUrl } from "../../config/enpoints";
 import { configType } from "../../core/configHelper";
-import { FktpService } from "../fktp.service";
+import { BaseService } from "../base.service";
 import { AlergiModule } from "./module/alergi.module";
 import { DiagnosaModule } from "./module/diagnosa.module";
 import { DokterModule } from "./module/dokter.module";
+import { KesadaranModule } from "./module/kesadaran.module";
 import { KunjunganModule } from "./module/kunjungan.module";
+import { MCUModule } from "./module/mcu.module";
 import { ObatModule } from "./module/obat.module";
+import { PendaftaranModule } from "./module/pendafataran.module";
 import { PesertaModule } from "./module/peserta.module";
 import { PoliModule } from "./module/poli.module";
+import { PrognosaModule } from "./module/prognosa.module";
 import { ProviderModule } from "./module/provider.module";
+import { SpesialisModule } from "./module/spesialis.module";
 import { StatusPulangModule } from "./module/statusPulang.module";
 import { TindakanPulangModule } from "./module/tindakan.module";
-import { KesadaranModule } from "./module/kesadaran.module";
-import { PrognosaModule } from "./module/prognosa.module";
-import { MCUModule } from "./module/mcu.module";
-import { PendaftaranModule } from "./module/pendafataran.module";
-import { SpesialisModule } from "./module/spesialis.module";
 
 /**
  * Service untuk mengakses endpoint PCare BPJS
  */
-export class PcareService extends FktpService {
+export class PcareService extends BaseService {
   public readonly diagnosa!: DiagnosaModule;
   public readonly obat!: ObatModule;
   public readonly dokter!: DokterModule;
