@@ -10,6 +10,18 @@
   Repository resmi: <a href="https://github.com/NewusTech/bpjs-bridge">NewusTech/bpjs-bridge</a>
 </p>
 
+<div align="center">
+
+![npm version](https://img.shields.io/npm/v/@newustechnology/bpjs-bridge?color=%2300aaff&label=npm%20version)
+![npm downloads](https://img.shields.io/npm/dm/@newustechnology/bpjs-bridge?color=%23ffaa00&label=downloads)
+![npm license](https://img.shields.io/npm/l/@newustechnology/bpjs-bridge)
+
+![GitHub Package Version](https://img.shields.io/github/v/release/newustechnology/bpjs-bridge?label=github%20packages)
+![GitHub Actions](https://img.shields.io/github/actions/workflow/status/newustechnology/bpjs-bridge/publish.yml?label=publish%20status)
+![GitHub Repo stars](https://img.shields.io/github/stars/newustechnology/bpjs-bridge?style=social)
+
+</div>
+
 ## Installation
 
 ```bash

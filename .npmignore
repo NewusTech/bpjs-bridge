@@ -1,0 +1,7 @@
+src/
+node_modules/
+coverage/
+dist/test/
+jest.config.js
+.git
+.github
