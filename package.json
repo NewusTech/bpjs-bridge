@@ -1,6 +1,6 @@
 {
   "name": "bpjs-bridge",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Integrasi BPJS PCare, Antrean FKTP, VClaim, dan iCare dengan dukungan Redis Cache, Logging, dan Modular Service Architecture. ",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
