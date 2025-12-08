@@ -1,7 +1,7 @@
 {
   "name": "bpjs-bridge",
-  "version": "1.0.2",
-  "description": "Bridging BPJS Kesehatan modular untuk Node.js / TypeScript",
+  "version": "1.0.3",
+  "description": "Integrasi BPJS PCare, Antrean FKTP, VClaim, dan iCare dengan dukungan Redis Cache, Logging, dan Modular Service Architecture. ",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.mjs",
