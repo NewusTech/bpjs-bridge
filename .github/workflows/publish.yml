@@ -27,6 +27,4 @@ jobs:
 
       # --- Publish ke npmjs.com ---
       - name: Publish to npm registry
-        run: npm publish --registry=https://registry.npmjs.org
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: NPM_TOKEN=${{ secrets.NPM_TOKEN }} npm publish --registry=https://registry.npmjs.org
